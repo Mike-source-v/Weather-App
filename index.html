@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #74ebd5, #ACB6E5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        .weather-app {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .weather-app input {
+            padding: 10px;
+            width: calc(100% - 22px);
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        .weather-app button {
+            padding: 10px 20px;
+            border: none;
+            background: #74ebd5;
+            color: #fff;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .weather-app button:hover {
+            background: #4da6a3;
+        }
+        
+        .weather-info,
+        .forecast {
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .forecast div {
+            margin-bottom: 15px;
+        }
+        
+        @media (min-width: 768px) {
+            .weather-app {
+                padding: 30px;
+                max-width: 500px;
+            }
+            .weather-app button {
+                font-size: 18px;
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="weather-app">
+        <h1>Weather App</h1>
+        <input type="text" id="cityInput" placeholder="Enter city name">
+        <button onclick="getWeather()">Get Weather</button>
+        <div class="weather-info" id="weatherInfo"></div>
+        <div class="forecast" id="forecast"></div>
+    </div>
+
+    <script>
+        async function getWeather() {
+            const city = document.getElementById('cityInput').value;
+            const apiKey = '7f3ed353db329bee43723ac685cccf14';
+            const weatherInfo = document.getElementById('weatherInfo');
+            const forecast = document.getElementById('forecast');
+
+            if (!city) {
+                weatherInfo.innerHTML = '<p>Please enter a city name.</p>';
+                forecast.innerHTML = '';
+                return;
+            }
+
+            weatherInfo.innerHTML = '<p>Loading...</p>';
+            forecast.innerHTML = '';
+
+            try {
+                // Fetch current weather
+                const weatherResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`);
+                if (!weatherResponse.ok) {
+                    throw new Error('City not found');
+                }
+                const weatherData = await weatherResponse.json();
+
+                weatherInfo.innerHTML = `
+                    <h2>${weatherData.name}, ${weatherData.sys.country}</h2>
+                    <p><strong>Temperature:</strong> ${weatherData.main.temp} &deg;C</p>
+                    <p><strong>Weather:</strong> ${weatherData.weather[0].description}</p>
+                    <p><strong>Humidity:</strong> ${weatherData.main.humidity}%</p>
+                    <p><strong>Wind Speed:</strong> ${weatherData.wind.speed} m/s</p>
+                `;
+
+                // Fetch 5-day forecast
+                const forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${apiKey}`);
+                if (!forecastResponse.ok) {
+                    throw new Error('Forecast data not available');
+                }
+                const forecastData = await forecastResponse.json();
+
+                const dailyForecast = forecastData.list.filter(item => item.dt_txt.includes('12:00:00'));
+                forecast.innerHTML = '<h3>5-Day Forecast</h3>' + dailyForecast.map(item => `
+                    <div>
+                        <p><strong>${new Date(item.dt_txt).toLocaleDateString()}</strong></p>
+                        <p>Temp: ${item.main.temp} &deg;C</p>
+                        <p>Weather: ${item.weather[0].description}</p>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                weatherInfo.innerHTML = `<p>${error.message}</p>`;
+                forecast.innerHTML = '';
+            }
+        }
+    </script>
+</body>
+
+</html>
